@@ -11,6 +11,7 @@ class Monitor(xbmc.Monitor):
         self.player = Player()
         self.api = Api()
         self.playback_manager = PlaybackManager()
+        self.playlist = xbmc.PlayList(xbmc.PLAYLIST_VIDEO)
         xbmc.Monitor.__init__(self)
 
     def log(self, msg, lvl=1):
@@ -30,9 +31,14 @@ class Monitor(xbmc.Monitor):
                     total_time = self.player.getTotalTime()
                     last_file = self.player.get_last_file()
                     current_file = self.player.getPlayingFile()
+                    playlist_size = self.playlist.size()
+                    playlist_pos = self.playlist.getposition()
                     notification_time = self.api.notification_time()
-                    up_next_disabled = utils.settings("disableNextUp") == "true"
-                    if utils.window("PseudoTVRunning") != "True" and not up_next_disabled:
+                    up_next_enabled = utils.settings("disableNextUp") != "true"
+                    enable_playlist = utils.settings("enablePlaylist") == "true"
+                    no_pseudo_tv = utils.window("PseudoTVRunning") != "True"
+                    playlist_eval = playlist_pos == playlist_size or playlist_size <= 1 or enable_playlist
+                    if no_pseudo_tv and up_next_enabled and playlist_eval:
                         if (total_time - play_time <= int(notification_time) and (
                                 last_file is None or last_file != current_file)) and total_time != 0:
                             self.player.set_last_file(current_file)
